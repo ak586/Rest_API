@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\api\SessionsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +16,19 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
+
+Route::post('/user/store', [UserController::class, 'store']);
+Route::get('/users/get/{flag}', [UserController::class, 'index']);
+Route::get('/user/{id}', [UserController::class,'show']);
+Route::delete('user/delete/{id}',[UserController::class, 'destroy']);
+Route::put('user/update/{id}', [UserController::class, 'update']);
+Route::patch('user/change-password/{id}', [UserController::class, 'changePassword']);
+
+
+Route::post('/login',[SessionsController::class,'login']);
+Route::post('/verify-token',[SessionsController::class, 'validate_token']);
+Route::post('login-status', [SessionsController::class, 'check_login_status']);
+Route::post('/logout',[SessionsController::class,'logout']);
