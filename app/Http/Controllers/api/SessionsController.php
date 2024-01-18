@@ -15,22 +15,14 @@ class SessionsController extends Controller
 {
     public function login(Request $request)
     {
-
         $valid = $request->validate([
             'email' => 'required|email',
             'password' => 'required'
         ]);
-        if (auth()->attempt($valid)) {
-            p('user logged in');
-            die();
-        } else {
-            p('unable to login');
-
-        }
-
-        $user = User::where('email', $request['email'])->first();
-        if (is_null($user)) {
-            return response()->json(["message" => "user not found"]);
+        if (!auth()->attempt($valid)) {
+            return response()->json([
+                "message"=>"authentication failed",
+                "status"=>1], 401);
         }
 
         $issued_at = time();
@@ -38,26 +30,14 @@ class SessionsController extends Controller
         $payload = array(
             "iat" => $issued_at,
             "exp" => $expiration_time,
-            "user_id" => $user->id,
+            "user_id" => auth()->user()->id,
         );
+
         $token = JWT::encode($payload, env("JWT_SECRET_KEY"), 'HS256');
         return response($token);
     }
 
 
-//    public function logout()
-//    {
-//        if (Cache::has('token')) {
-//            Cache::delete('token');
-//            return response()->json(["message" => "Logout successful",
-//                "status" => "successful"
-//            ]);
-//        } else {
-//            return response()->json(["message" => "You are already logged out",
-//                "status" => "failed"
-//            ]);
-//        }
-//    }
 
     public function check_login_status(Request $request)
     {
@@ -74,7 +54,7 @@ class SessionsController extends Controller
             return response()->json([
                 "message" => $err->getMessage(),
                 "status" => "failed"
-            ]);
+            ],401);
         }
     }
 
@@ -87,8 +67,9 @@ class SessionsController extends Controller
             JWT::decode($token, new Key(env('JWT_SECRET_KEY'), 'HS256'));
             return response()->json(["message" => "decoded successfully"]);
         } catch (\Exception $err) {
+
             return response()->json(["message" => $err->getMessage(),
-                "status" => "failed"]);
+                "status" => 0],401);
         }
     }
 }
