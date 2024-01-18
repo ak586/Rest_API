@@ -21,6 +21,7 @@ class SessionsController extends Controller
             'password' => 'required'
         ]);
 
+
         $user = User::where('email', $request['email'])->first();
         if (is_null($user)) {
             return response()->json(["message" => "user not found"]);
@@ -33,51 +34,43 @@ class SessionsController extends Controller
             "exp" => $expiration_time,
             "user_id" => $user->id,
         );
-        $token = JWT::encode($payload, "hii", 'HS256');
-        Cache::put('token', $token, 5 * 60);
+        $token = JWT::encode($payload,env("JWT_SECRET_KEY"), 'HS256');
+        return response($token);
+    }
+
+
+//    public function logout()
+//    {
+//        if (Cache::has('token')) {
+//            Cache::delete('token');
+//            return response()->json(["message" => "Logout successful",
+//                "status" => "successful"
+//            ]);
+//        } else {
+//            return response()->json(["message" => "You are already logged out",
+//                "status" => "failed"
+//            ]);
+//        }
+//    }
+
+    public function check_login_status(Request $request)
+    {
+        $token=explode(' ',$request->header('Authorization'))[1];
+        try{
+        $decoded=JWT::decode($token, new Key(env('JWT_SECRET_KEY'),'HS256'));
+        $id=$decoded->user_id;
         return response()->json([
-            "message" => "Token created",
-            "token" => $token
-        ]);
-    }
-
-
-    public function logout()
-    {
-        if (Cache::has('token')) {
-            Cache::delete('token');
-            return response()->json(["message" => "Logout successful",
-                "status" => "successful"
+            "message"=>"user is logged in",
+            "status"=>"success",
+            "user"=>User::find($id),
             ]);
-        } else {
-            return response()->json(["message" => "You are already logged out",
-                "status" => "failed"
-            ]);
-        }
-    }
-
-
-    public function check_login_status()
-    {
-        if (Cache::has("token")) {
-            $token = Cache::get('token');
-            $decoded = JWT::decode($token, new Key('hii', 'HS256'));
-            $user_id = $decoded->user_id;
-            $user = User::find($user_id);
-            return response()->json(['message' => "you are logged in ",
-                "status"=>"successful",
-                "decoded" => $decoded,
-                "user" => $user
-            ]);
-        } else {
-            return response()->json(['message' => "You are not logged in",
+        }catch (\Exception $err){
+            return response()->json([
+                "message"=>$err->getMessage(),
                 "status"=>"failed"
             ]);
-
         }
-
     }
-
 
 
 
@@ -86,13 +79,11 @@ class SessionsController extends Controller
         $token = $request->header('token');
         $secret_key = "hii";
         try {
-            JWT::decode($token, new Key($secret_key, 'HS256'));
+            JWT::decode($token, new Key(env('JWT_SECRET_KEY'), 'HS256'));
             return response()->json(["message" => "decoded successfully"]);
         } catch (\Exception $err) {
             return response()->json(["message" => $err->getMessage(),
                 "status" => "failed"]);
         }
     }
-
-
 }
