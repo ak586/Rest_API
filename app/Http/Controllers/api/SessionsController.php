@@ -16,11 +16,17 @@ class SessionsController extends Controller
     public function login(Request $request)
     {
 
-        $validated=$request->validate([
+        $valid = $request->validate([
             'email' => 'required|email',
             'password' => 'required'
         ]);
+        if (auth()->attempt($valid)) {
+            p('user logged in');
+            die();
+        } else {
+            p('unable to login');
 
+        }
 
         $user = User::where('email', $request['email'])->first();
         if (is_null($user)) {
@@ -34,7 +40,7 @@ class SessionsController extends Controller
             "exp" => $expiration_time,
             "user_id" => $user->id,
         );
-        $token = JWT::encode($payload,env("JWT_SECRET_KEY"), 'HS256');
+        $token = JWT::encode($payload, env("JWT_SECRET_KEY"), 'HS256');
         return response($token);
     }
 
@@ -55,23 +61,22 @@ class SessionsController extends Controller
 
     public function check_login_status(Request $request)
     {
-        $token=explode(' ',$request->header('Authorization'))[1];
-        try{
-        $decoded=JWT::decode($token, new Key(env('JWT_SECRET_KEY'),'HS256'));
-        $id=$decoded->user_id;
-        return response()->json([
-            "message"=>"user is logged in",
-            "status"=>"success",
-            "user"=>User::find($id),
-            ]);
-        }catch (\Exception $err){
+        $token = explode(' ', $request->header('Authorization'))[1];
+        try {
+            $decoded = JWT::decode($token, new Key(env('JWT_SECRET_KEY'), 'HS256'));
+            $id = $decoded->user_id;
             return response()->json([
-                "message"=>$err->getMessage(),
-                "status"=>"failed"
+                "message" => "user is logged in",
+                "status" => "success",
+                "user" => User::find($id),
+            ]);
+        } catch (\Exception $err) {
+            return response()->json([
+                "message" => $err->getMessage(),
+                "status" => "failed"
             ]);
         }
     }
-
 
 
     public function validate_token(Request $request)
