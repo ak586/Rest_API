@@ -13,7 +13,8 @@ class SessionsController extends Controller
             'email' => 'required|email',
             'password' => 'required'
         ]);
-        if(!$token=auth()->attempt($valid)){
+
+        if(!$token=auth()->setTTL(7200)->attempt($valid)){
             return response()->json(
                 [
                    "message"=>'Authentication failed',
@@ -30,29 +31,19 @@ class SessionsController extends Controller
     }
 
 
-
-    public function log_status(Request $request)
+    public function profile(Request $request)
     {
-        if(!auth()->user()){
-            return response()->json([
-                "message"=>"You are not logged in",
-                "status"=>1
-            ],401);
-        }
-        return response()->json(auth()->user());
+        return response()->json(auth()->user(),200);
     }
 
     public function logout()
     {
-        if(auth()->user()){
             auth()->logout();
-            return response()->json(['message' => 'Successfully logged out'],200);
-        }
-        else{
-            return response()->json(['message' => 'You are already logged out'],400);
-        }
+            return response()->json([
+                'message' => 'Successfully logged out',
+                'status'=>1
+            ],200);
     }
-
 
 
 
