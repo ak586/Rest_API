@@ -4,13 +4,7 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Firebase\JWT\Key;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
-use Firebase\JWT\JWT;
-use \Illuminate\Support\Facades\Cache;
-
 class SessionsController extends Controller
 {
     public function login(Request $request)
@@ -19,57 +13,47 @@ class SessionsController extends Controller
             'email' => 'required|email',
             'password' => 'required'
         ]);
-        if (!auth()->attempt($valid)) {
-            return response()->json([
-                "message"=>"authentication failed",
-                "status"=>1], 401);
+        if(!$token=auth()->attempt($valid)){
+            return response()->json(
+                [
+                   "message"=>'Authentication failed',
+                    'status'=>0,
+                ],401
+            );
         }
-
-        $issued_at = time();
-        $expiration_time = $issued_at + (60 * 5);
-        $payload = array(
-            "iat" => $issued_at,
-            "exp" => $expiration_time,
-            "user_id" => auth()->user()->id,
-        );
-
-        $token = JWT::encode($payload, env("JWT_SECRET_KEY"), 'HS256');
-        return response($token);
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'status'=>1
+        ],
+        200);
     }
 
 
 
-    public function check_login_status(Request $request)
+    public function log_status(Request $request)
     {
-        $token = explode(' ', $request->header('Authorization'))[1];
-        try {
-            $decoded = JWT::decode($token, new Key(env('JWT_SECRET_KEY'), 'HS256'));
-            $id = $decoded->user_id;
+        if(!auth()->user()){
             return response()->json([
-                "message" => "user is logged in",
-                "status" => "success",
-                "user" => User::find($id),
-            ]);
-        } catch (\Exception $err) {
-            return response()->json([
-                "message" => $err->getMessage(),
-                "status" => "failed"
+                "message"=>"You are not logged in",
+                "status"=>1
             ],401);
         }
+        return response()->json(auth()->user());
     }
 
-
-    public function validate_token(Request $request)
+    public function logout()
     {
-        $token = $request->header('token');
-        $secret_key = "hii";
-        try {
-            JWT::decode($token, new Key(env('JWT_SECRET_KEY'), 'HS256'));
-            return response()->json(["message" => "decoded successfully"]);
-        } catch (\Exception $err) {
-
-            return response()->json(["message" => $err->getMessage(),
-                "status" => 0],401);
+        if(auth()->user()){
+            auth()->logout();
+            return response()->json(['message' => 'Successfully logged out'],200);
+        }
+        else{
+            return response()->json(['message' => 'You are already logged out'],400);
         }
     }
+
+
+
+
 }

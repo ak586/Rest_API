@@ -28,7 +28,7 @@ Route::put('user/update/{id}', [UserController::class, 'update']);
 Route::patch('user/change-password/{id}', [UserController::class, 'changePassword']);
 
 
+
 Route::post('/login',[SessionsController::class,'login']);
-Route::post('/verify-token',[SessionsController::class, 'validate_token']);
-Route::post('login-status', [SessionsController::class, 'check_login_status']);
-Route::post('/logout',[SessionsController::class,'logout']);
+Route::post('register',[UserController::class,'register']);
+Route::post('/me',[SessionsController::class , 'log_status']);
