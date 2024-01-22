@@ -14,7 +14,7 @@ class SessionsController extends Controller
             'password' => 'required'
         ]);
 
-        if(!$token=auth()->setTTL(7200)->attempt($valid)){
+        if(!$token=auth()->setTTL(100000000)->attempt($valid)){
             return response()->json(
                 [
                    "message"=>'Authentication failed',

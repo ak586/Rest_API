@@ -1,11 +1,10 @@
 <?php
 
-use App\Http\Controllers\api\SessionsController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\UserController;
-use \App\Http\Middleware\LoggedIn;
-use App\Http\Middleware\IsGuest;
+use App\Http\Controllers\Api\PostsController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,13 +28,23 @@ Route::put('user/update/{id}', [UserController::class, 'update']);
 Route::patch('user/change-password/{id}', [UserController::class, 'changePassword']);
 
 
-Route::post('/login',[SessionsController::class,'login'])->middleware('guest.jwt');
-Route::post('register',[UserController::class,'register'])->middleware('guest.jwt');
-Route::get('/me',[SessionsController::class , 'profile'])->middleware('auth.jwt');
-Route::get('/logout',[SessionsController::class,'logout'])->middleware('auth.jwt');
+//Route::post('/login',[SessionsController::class,'login'])->middleware('guest.jwt');
+//Route::get('/me',[SessionsController::class , 'profile'])->middleware('auth.jwt');
+//Route::get('/logout',[SessionsController::class,'logout'])->middleware('auth.jwt');
+Route::post('register',[UserController::class,'register']);
 
 
+Route::group([
+    'middleware' => 'api',
+    'namespace' => 'App\Http\Controllers',
+    'prefix' => 'auth'
+], function ($router) {
+    Route::post('login', [AuthController::class,'login']);
+    Route::post('logout', [AuthController::class,'logout']);
+    Route::post('refresh', [AuthController::class,'refresh']);
+    Route::post('me', [AuthController::class,'me']);
+});
 
-Route::get('/middleware',function (){
-    return response("middleware entered");
-})->middleware(LoggedIn::class);
+Route::apiResource('posts',PostsController::class)->middleware('auth:api');
+
+
