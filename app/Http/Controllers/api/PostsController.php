@@ -13,30 +13,18 @@ use Spatie\Permission\Models\Permission;
 
 class PostsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function __construct(){
-        $this->middleware(['role:admin|writer'])->only(['update', 'destroy', 'store']);
 
+    public function __construct()
+    {
+        $this->middleware(['role:admin|Super-Admin'])->only(['destroy', 'store', 'update']);
     }
-     
 
     public function index()
     {
-        
         $post = Post::all();
-        return response()->json($post,200);
-        // Adding permissions to a user
+        return response()->json(["posts" => $post], 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -47,8 +35,12 @@ class PostsController extends Controller
             'title' => 'required',
             'body' => 'required',
         ]);
-        $post = Post::create($validate);
-        return response()->json($post,200);
+        $post = Post::create([
+            'title' => $request->title,
+            'body' => $request->body,
+            'user_id' => auth()->user()->id,
+        ]);
+        return response()->json($post, 200);
     }
 
     /**
@@ -56,37 +48,32 @@ class PostsController extends Controller
      */
     public function show(string $id)
     {
-        $post=Post::find($id);
-        return response()->json([$post],200);
+        $post = Post::find($id);
+        return response()->json([$post], 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        
-    }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
-       
+
         $post = Post::find($id);
-        if(auth()->user()->hasRole('writer') && auth()->user()->id!==$post->author->id){
-            return response()->json(['message' => 'You do not have permissions to edit this post'], 403);
+        $user = auth()->user();
+        if (!$user->hasRole('Super-Admin') && auth()->user()->id != $post->author->id) {
+            return response()->json(["message" => "You can't edit this post."], 403);
         }
-            $validate = $request->validate( [
-                'title' => 'sometimes',
-                'body' => 'sometimes',
-            ]);
-        $post->title = $request->title;
-        $post->body = $request->body;
+        $validate = $request->validate([
+            'title' => 'sometimes|required',
+            'body' => 'sometimes|required',
+        ]);
+        if ($request->title)
+            $post->title = $request->title;
+        if ($request->body)
+            $post->body = $request->body;
         $post->save();
-        return response()->json($post,200);
-        
+        return response()->json($post, 200);
     }
 
     /**
@@ -95,10 +82,11 @@ class PostsController extends Controller
     public function destroy(string $id)
     {
         $post = Post::find($id);
-        if(auth()->user()->hasRole('writer') && auth()->user()->id!==$post->author->id){
-            return response()->json(['message' => 'You do not have permissions to edit this post'], 403);
+        $user = auth()->user();
+        if (!$user->hasRole('Super-Admin') && auth()->user()->id != $post->author->id) {
+            return response()->json(["message" => "You don't have permission to delete this post."], 403);
         }
         $post->delete();
-        return response()->json(['message'=>'post deleted', 'post'=>$post],200);  
+        return response()->json(['message' => 'post deleted', 'post' => $post], 200);
     }
 }

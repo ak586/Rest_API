@@ -45,6 +45,5 @@ Route::group([
     Route::post('me', [AuthController::class,'me']);
 });
 
-Route::apiResource('posts',PostsController::class)->middleware('auth:api');
 
-
+Route::apiResource('posts',PostsController::class)->middleware(['auth:api']);
